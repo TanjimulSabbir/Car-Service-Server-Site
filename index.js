@@ -18,6 +18,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         const userCollections = client.db("carService").collection("services");
+        const OrderUserCollections = client.db("carService").collection("order");
 
         app.get("/services", async (req, res) => {
             const query = {};
@@ -46,6 +47,39 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const DeleteResult = await userCollections.deleteOne(query);
             res.send(DeleteResult)
+        });
+
+        // Update data
+        app.put("/services/:id", async (req, res) => {
+            const id = req.params.id;
+            const userData = req.body;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const UpdatedDoc = {
+                $set: userData
+            }
+            const UpdateUser = await userCollections.updateOne(query, UpdatedDoc, options);
+            res.send(UpdateUser);
+            console.log(
+                `${UpdateUser.matchedCount} document(s) matched the filter, updated ${UpdateUser.modifiedCount} document(s)`,
+            );
+        });
+
+        // order post
+
+        app.post("/order", async (req, res) => {
+            const userData = req.body;
+            const result = await OrderUserCollections.insertOne(userData);
+            res.send(result)
+        });
+        // order get
+        app.get("/order", async (req, res) => {
+            const email = req.query.email;
+            console.log(email);
+            const query = { email: email };
+            const cursor = OrderUserCollections.find(query);
+            const result = await cursor.toArray();
+            res.send(result)
         })
     }
     finally {
